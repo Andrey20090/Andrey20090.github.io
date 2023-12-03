@@ -1,0 +1,85 @@
+/* HEADER */
+
+.menu {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-evenly;
+}
+
+.header-row{
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+
+.header-logo{
+    /* //включаем флекс бокс// */
+    display: flex; 
+    /* направление расположений блоков относительно main axis слева направо */
+    flex-direction: row;
+    /* направление расположением блоков относительно cross axis по центру */
+    align-items: center;
+    /* размер блок с лого и названием(его вес) относительно других элементов */
+    flex-grow: 1;
+}
+
+.logo-img{
+    margin-right: 40px;
+    
+}
+
+.header-menu{
+    flex-grow: 3;
+}
+
+.cards-row{
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+}
+
+.footer{
+    background: url(img/footer-bg.jpg);
+    background-size: cover;
+    padding: 100px 0px;
+}
+
+.footer-row{
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+
+}
+
+.footer-img{
+    margin: 10px;
+    width: 60px;
+    height: 60px;
+}
+
+.copyright{
+    color: white;
+}
+
+.footer-search{
+    display: flex;
+    justify-content: space-between;
+    margin-top: 30px;
+    align-items: center;
+}
+
+.footer-search-input{
+    height: 40px;
+    flex-grow: 3;
+    margin-right: 20px;
+    border-radius: 10px;
+    border: none;
+}
+
+.footer-search-button{
+    height: 40px;
+    flex-grow: 2;
+    border-radius: 10px;
+    font-weight: bold;
+    text-transform: uppercase;
+}
