@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Clicker Game</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <div class="game-container">
+            <div class="score-container">
+                <div class="score">Clicks: <span id="clicks">0</span></div>
+                <div class="currency">Currency: <span id="currency">0</span></div>
+            </div>
+            <div class="click-area" id="clickArea">
+                <div class="click-button">TAP</div>
+            </div>
+            <div class="progress-container">
+                <div class="progress-label">Progress to next reward:</div>
+                <div class="progress-bar-container">
+                    <div class="progress-bar" id="progressBar"></div>
+                </div>
+                <div class="progress-text"><span id="progressText">0</span> / 10,000</div>
+            </div>
+        </div>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>
+
