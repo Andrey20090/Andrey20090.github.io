@@ -226,20 +226,3 @@ body {
   }
 }
 
-.daily-limit-container {
-  display: flex;
-  justify-content: space-between;
-  font-size: 18px;
-  font-weight: bold;
-  padding: 15px;
-  background: linear-gradient(90deg, #001428, #003366);
-  border-radius: 12px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(0, 120, 255, 0.3);
-}
-
-.click-area.disabled {
-  background-color: var(--tg-theme-hint-color, #999999);
-  cursor: not-allowed;
-  opacity: 0.7;
-}
