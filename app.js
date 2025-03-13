@@ -63,13 +63,40 @@ function updateUI() {
   progressText.textContent = clicksTowardsCurrency.toLocaleString()
 }
 
+// Create ripple effect
+function createRipple(event) {
+  const clickArea = event.currentTarget
+
+  const circle = document.createElement("span")
+  const diameter = Math.max(clickArea.clientWidth, clickArea.clientHeight)
+  const radius = diameter / 2
+
+  const rect = clickArea.getBoundingClientRect()
+
+  circle.style.width = circle.style.height = `${diameter}px`
+  circle.style.left = `${event.clientX - rect.left - radius}px`
+  circle.style.top = `${event.clientY - rect.top - radius}px`
+  circle.classList.add("ripple")
+
+  const ripple = clickArea.getElementsByClassName("ripple")[0]
+
+  if (ripple) {
+    ripple.remove()
+  }
+
+  clickArea.appendChild(circle)
+}
+
 // Handle click on the click area
-clickArea.addEventListener("click", () => {
+clickArea.addEventListener("click", (event) => {
   // Add click effect
   clickArea.classList.add("click-effect")
   setTimeout(() => {
     clickArea.classList.remove("click-effect")
   }, 200)
+
+  // Add ripple effect
+  createRipple(event)
 
   // Increment clicks
   clicks++
