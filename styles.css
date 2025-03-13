@@ -6,8 +6,8 @@
 }
 
 body {
-  background-color: var(--tg-theme-bg-color, #ffffff);
-  color: var(--tg-theme-text-color, #000000);
+  background: linear-gradient(135deg, #000000, #0a1929, #001e3c);
+  color: #ffffff;
   height: 100vh;
   overflow: hidden;
 }
@@ -27,6 +27,12 @@ body {
   display: flex;
   flex-direction: column;
   gap: 20px;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 25px;
+  border-radius: 20px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .score-container {
@@ -34,9 +40,38 @@ body {
   justify-content: space-between;
   font-size: 18px;
   font-weight: bold;
-  padding: 10px;
-  background-color: var(--tg-theme-secondary-bg-color, #f0f0f0);
-  border-radius: 10px;
+  padding: 15px;
+  background: linear-gradient(90deg, #001428, #003366);
+  border-radius: 12px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(0, 120, 255, 0.3);
+}
+
+.score,
+.currency {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.score::before {
+  content: "";
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  background: #00a8ff;
+  border-radius: 50%;
+  box-shadow: 0 0 10px #00a8ff;
+}
+
+.currency::before {
+  content: "";
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  background: #00e676;
+  border-radius: 50%;
+  box-shadow: 0 0 10px #00e676;
 }
 
 .click-area {
@@ -44,54 +79,93 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: var(--tg-theme-button-color, #2481cc);
+  background: linear-gradient(145deg, #001428, #0a4d8c);
   border-radius: 20px;
   cursor: pointer;
   user-select: none;
-  transition: transform 0.1s, box-shadow 0.1s;
-  box-shadow: 0 8px 0 rgba(0, 0, 0, 0.2);
+  transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow: 0 8px 0 rgba(0, 0, 0, 0.3), 0 0 20px rgba(0, 150, 255, 0.5);
+  position: relative;
+  overflow: hidden;
+}
+
+.click-area::before {
+  content: "";
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(0, 150, 255, 0.1) 0%, transparent 70%);
+  opacity: 0;
+  transition: opacity 0.5s;
+}
+
+.click-area:hover::before {
+  opacity: 1;
 }
 
 .click-area:active {
   transform: translateY(4px);
-  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.3), 0 0 10px rgba(0, 150, 255, 0.5);
 }
 
 .click-button {
-  font-size: 32px;
+  font-size: 36px;
   font-weight: bold;
-  color: var(--tg-theme-button-text-color, #ffffff);
+  color: #ffffff;
+  text-shadow: 0 0 10px rgba(0, 150, 255, 0.8);
+  letter-spacing: 2px;
 }
 
 .progress-container {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 8px;
 }
 
 .progress-label {
   font-size: 16px;
   margin-bottom: 5px;
+  color: rgba(255, 255, 255, 0.8);
 }
 
 .progress-bar-container {
   width: 100%;
   height: 20px;
-  background-color: var(--tg-theme-secondary-bg-color, #f0f0f0);
+  background: linear-gradient(90deg, #000c18, #001428);
   border-radius: 10px;
   overflow: hidden;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(0, 120, 255, 0.2);
 }
 
 .progress-bar {
   height: 100%;
   width: 0%;
-  background-color: var(--tg-theme-button-color, #2481cc);
+  background: linear-gradient(90deg, #0066cc, #00a8ff);
+  box-shadow: 0 0 10px rgba(0, 150, 255, 0.7);
   transition: width 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.progress-bar::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.2) 50%, transparent 100%);
+  animation: shimmer 1.5s infinite;
+  transform: skewX(-20deg);
 }
 
 .progress-text {
   text-align: center;
   font-size: 14px;
+  color: rgba(255, 255, 255, 0.7);
 }
 
 /* Animation for click effect */
@@ -107,7 +181,48 @@ body {
   }
 }
 
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%) skewX(-20deg);
+  }
+  100% {
+    transform: translateX(200%) skewX(-20deg);
+  }
+}
+
 .click-effect {
   animation: clickEffect 0.2s;
+}
+
+/* Ripple effect for click area */
+.ripple {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(0, 150, 255, 0.4);
+  transform: scale(0);
+  animation: ripple 0.8s linear;
+  pointer-events: none;
+}
+
+@keyframes ripple {
+  to {
+    transform: scale(4);
+    opacity: 0;
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 480px) {
+  .game-container {
+    padding: 20px;
+  }
+
+  .click-area {
+    height: 200px;
+  }
+
+  .click-button {
+    font-size: 30px;
+  }
 }
 
