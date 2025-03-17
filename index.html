@@ -2,38 +2,216 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Clicker Game</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <link rel="stylesheet" href="styles.css">
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+            padding: 20px;
+            width: 100%;
+            box-sizing: border-box;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            background-color: #fff;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .stat-box {
+            text-align: center;
+            flex: 1;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .click-area {
+            background-color: #4CAF50;
+            color: white;
+            text-align: center;
+            padding: 40px 0;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            cursor: pointer;
+            user-select: none;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            transition: transform 0.1s;
+        }
+
+        .click-area.click-effect {
+            transform: scale(0.98);
+        }
+
+        .click-area.disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+
+        .click-text {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .progress-container {
+            background-color: #fff;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .progress-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+
+        .progress-bar-container {
+            background-color: #f0f0f0;
+            border-radius: 5px;
+            height: 20px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            background-color: #2196F3;
+            height: 100%;
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        .energy-container {
+            background-color: #fff;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .energy-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+
+        .energy-bar-container {
+            background-color: #f0f0f0;
+            border-radius: 5px;
+            height: 20px;
+            overflow: hidden;
+        }
+
+        .energy-bar {
+            background-color: #FF9800;
+            height: 100%;
+            width: 100%;
+            transition: width 0.3s;
+        }
+
+        .ripple {
+            position: absolute;
+            background-color: rgba(255, 255, 255, 0.7);
+            border-radius: 50%;
+            transform: scale(0);
+            animation: ripple 0.6s linear;
+            pointer-events: none;
+        }
+
+        @keyframes ripple {
+            to {
+                transform: scale(4);
+                opacity: 0;
+            }
+        }
+    </style>
 </head>
 <body>
     <div class="container">
-        <div class="game-container">
-            <div class="score-container">
-                <div class="score">Кликов: <span id="clicks">0</span></div>
-                <div class="currency">получено 💎: <span id="currency">0</span></div>
+        <div class="header">
+            <h1>Clicker Game</h1>
+        </div>
+
+        <div class="stats">
+            <div class="stat-box">
+                <div class="stat-label">Клики</div>
+                <div class="stat-value" id="clicks">0</div>
             </div>
-            <div class="energy-container">
-                <div class="energy-label">Энергия: <span id="energyTime" class="energy-time"></span></div>
-                <div class="energy-bar-container">
-                    <div class="energy-bar" id="energyBar"></div>
-                </div>
-                <div class="energy-text"><span id="energyText">500/500</span></div>
-            </div>
-            <div class="click-area" id="clickArea">
-                <div class="click-button">Жми!</div>
-            </div>
-            <div class="progress-container">
-                <div class="progress-label">До следующей награды:</div>
-                <div class="progress-bar-container">
-                    <div class="progress-bar" id="progressBar"></div>
-                </div>
-                <div class="progress-text"><span id="progressText">0</span> / 10,000</div>
+            <div class="stat-box">
+                <div class="stat-label">Заработано 💎</div>
+                <div class="stat-value" id="currency">0</div>
             </div>
         </div>
+
+        <div class="progress-container">
+            <div class="progress-label">
+                <span>До следующей награды:</span>
+                <span id="progressText">0</span>
+            </div>
+            <div class="progress-bar-container">
+                <div class="progress-bar" id="progressBar"></div>
+            </div>
+        </div>
+
+        <div class="energy-container">
+            <div class="energy-label">
+                <span>Энергия</span>
+                <span id="energyText">500/500</span>
+            </div>
+            <div class="energy-bar-container">
+                <div class="energy-bar" id="energyBar"></div>
+            </div>
+            <div style="text-align: right; margin-top: 5px; font-size: 12px; color: #666;">
+                Восстановление: <span id="energyTime">Full</span>
+            </div>
+        </div>
+
+        <div class="click-area" id="clickArea">
+            <div class="click-text">Жми!</div>
+            <div>Получайте 1 💎 за каждые 10.000 кликов!</div>
+        </div>
     </div>
+
     <script src="app.js"></script>
 </body>
 </html>
