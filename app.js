@@ -15,8 +15,8 @@ const ENERGY_REGEN_RATE = maxEnergy / (60 * 60 * 1000) // Energy per millisecond
 let clickTimestamps = []
 const MIN_CLICK_INTERVAL = 50 // Minimum time between clicks in ms
 let securityToken = generateSecurityToken()
-let lastSyncTimestamp = Date.now()
-const SYNC_INTERVAL = 3000 // Sync with server every 3 seconds
+const lastSyncTimestamp = Date.now()
+const SYNC_INTERVAL = 30000 // Sync with server every 30 seconds
 
 // DOM elements
 const clicksElement = document.getElementById("clicks")
@@ -32,13 +32,6 @@ const energyTimeElement = document.getElementById("energyTime")
 // Generate a security token
 function generateSecurityToken() {
   return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
-}
-
-// Calculate a checksum for the game state
-function calculateChecksum(clickCount, energyValue, currencyValue) {
-  const salt = "kL9pQ7rT3xZ2" // Secret salt value
-  const data = `${clickCount}:${energyValue}:${currencyValue}:${securityToken}:${salt}`
-  return hashString(data)
 }
 
 // Simple hash function
@@ -62,42 +55,6 @@ function detectDebugging() {
   return endTime - startTime > 100
 }
 
-// Anti-tampering check
-function performSecurityCheck() {
-  // Check if variables have been tampered with
-  if (
-    typeof clicks !== "number" ||
-    typeof energy !== "number" ||
-    typeof currency !== "number" ||
-    clicks < 0 ||
-    energy < 0 ||
-    energy > maxEnergy ||
-    currency < 0
-  ) {
-    // Reset game if tampering detected
-    resetGame()
-    tg.showPopup({
-      title: "Security Alert",
-      message: "Abnormal game state detected. Game has been reset.",
-      buttons: [{ type: "ok" }],
-    })
-    return false
-  }
-
-  // Check for debugging
-  if (detectDebugging()) {
-    resetGame()
-    tg.showPopup({
-      title: "Security Alert",
-      message: "Debugging tools detected. Game has been reset.",
-      buttons: [{ type: "ok" }],
-    })
-    return false
-  }
-
-  return true
-}
-
 // Reset game to initial state
 function resetGame() {
   clicks = 0
@@ -110,93 +67,182 @@ function resetGame() {
   updateUI()
 }
 
-// Modify the saveGameData function to ensure it always saves the current state
+// ===== STORAGE METHODS =====
+
+// Get user ID for storage keys
+function getUserId() {
+  try {
+    const initData = tg.initDataUnsafe
+    if (initData && initData.user && initData.user.id) {
+      return initData.user.id
+    }
+    // Fallback to a fixed ID if user ID is not available
+    return "default_user"
+  } catch (error) {
+    console.error("Error getting user ID:", error)
+    return "default_user"
+  }
+}
+
+// Save game data using multiple storage methods
 function saveGameData() {
   try {
-    const initData = tg.initDataUnsafe
-    if (initData && initData.user) {
-      const userId = initData.user.id
+    const userId = getUserId()
 
-      // Calculate checksum for data integrity
-      const checksum = calculateChecksum(clicks, energy, currency)
-
-      const data = {
-        clicks: clicks,
-        currency: currency,
-        energy: energy,
-        lastTimestamp: Date.now(), // Always use current timestamp when saving
-        securityToken: securityToken,
-        checksum: checksum,
-      }
-
-      // Use both localStorage and sessionStorage for redundancy
-      localStorage.setItem(`clicker_data_${userId}`, JSON.stringify(data))
-      sessionStorage.setItem(`clicker_data_${userId}`, JSON.stringify(data))
-
-      console.log("Game data saved successfully:", { clicks, currency, energy })
+    // Create a simple data object without checksums
+    const data = {
+      clicks: clicks,
+      currency: currency,
+      energy: energy,
+      timestamp: Date.now(),
     }
+
+    // Convert to JSON string
+    const jsonData = JSON.stringify(data)
+
+    // 1. Save to localStorage
+    try {
+      localStorage.setItem(`clicker_data_${userId}`, jsonData)
+    } catch (e) {
+      console.error("localStorage save failed:", e)
+    }
+
+    // 2. Save to sessionStorage
+    try {
+      sessionStorage.setItem(`clicker_data_${userId}`, jsonData)
+    } catch (e) {
+      console.error("sessionStorage save failed:", e)
+    }
+
+    // 3. Save to document.cookie (as a backup)
+    try {
+      const cookieExpiry = new Date()
+      cookieExpiry.setTime(cookieExpiry.getTime() + 30 * 24 * 60 * 60 * 1000) // 30 days
+      document.cookie = `clicker_data_${userId}=${encodeURIComponent(jsonData)}; expires=${cookieExpiry.toUTCString()}; path=/`
+    } catch (e) {
+      console.error("Cookie save failed:", e)
+    }
+
+    // 4. Save to window.name (as another backup)
+    try {
+      window.name = `clicker_data_${userId}:${jsonData}`
+    } catch (e) {
+      console.error("window.name save failed:", e)
+    }
+
+    console.log("Game data saved successfully:", data)
   } catch (error) {
-    console.error("Error saving game data:", error)
+    console.error("Error in saveGameData:", error)
   }
 }
 
-// Modify the loadGameData function to be more robust
+// Get cookie value by name
+function getCookie(name) {
+  const value = `; ${document.cookie}`
+  const parts = value.split(`; ${name}=`)
+  if (parts.length === 2) return decodeURIComponent(parts.pop().split(";").shift())
+  return null
+}
+
+// Load game data from any available storage
 function loadGameData() {
   try {
-    // Try to get data from Telegram WebApp
-    const initData = tg.initDataUnsafe
-    if (initData && initData.user) {
-      const userId = initData.user.id
+    const userId = getUserId()
+    let data = null
+    let source = ""
 
-      // Try to get data from localStorage first, then sessionStorage as backup
-      let savedData = localStorage.getItem(`clicker_data_${userId}`)
-
-      if (!savedData) {
-        savedData = sessionStorage.getItem(`clicker_data_${userId}`)
-        console.log("Using sessionStorage backup data")
+    // 1. Try localStorage
+    try {
+      const localData = localStorage.getItem(`clicker_data_${userId}`)
+      if (localData) {
+        data = JSON.parse(localData)
+        source = "localStorage"
       }
+    } catch (e) {
+      console.error("localStorage load failed:", e)
+    }
 
-      if (savedData) {
-        try {
-          const data = JSON.parse(savedData)
-          console.log("Loaded saved data:", data)
-
-          // Load data without checksum validation first to prevent data loss
-          clicks = data.clicks || 0
-          currency = data.currency || 0
-          energy = data.energy !== undefined ? data.energy : maxEnergy
-          lastTimestamp = data.lastTimestamp || Date.now()
-          securityToken = data.securityToken || generateSecurityToken()
-
-          // Regenerate energy based on time passed
-          regenerateEnergy()
-          updateUI()
-
-          console.log("Game data loaded successfully:", { clicks, currency, energy })
-        } catch (e) {
-          console.error("Error parsing saved data:", e)
-          // Don't reset game here, just use default values
-          if (clicks === 0) {
-            energy = maxEnergy
-            lastTimestamp = Date.now()
-          }
+    // 2. Try sessionStorage if localStorage failed
+    if (!data) {
+      try {
+        const sessionData = sessionStorage.getItem(`clicker_data_${userId}`)
+        if (sessionData) {
+          data = JSON.parse(sessionData)
+          source = "sessionStorage"
         }
-      } else {
-        console.log("No saved data found")
+      } catch (e) {
+        console.error("sessionStorage load failed:", e)
       }
     }
+
+    // 3. Try cookies if both storages failed
+    if (!data) {
+      try {
+        const cookieData = getCookie(`clicker_data_${userId}`)
+        if (cookieData) {
+          data = JSON.parse(cookieData)
+          source = "cookie"
+        }
+      } catch (e) {
+        console.error("Cookie load failed:", e)
+      }
+    }
+
+    // 4. Try window.name as last resort
+    if (!data) {
+      try {
+        if (window.name && window.name.startsWith(`clicker_data_${userId}:`)) {
+          const nameData = window.name.substring(`clicker_data_${userId}:`.length)
+          data = JSON.parse(nameData)
+          source = "window.name"
+        }
+      } catch (e) {
+        console.error("window.name load failed:", e)
+      }
+    }
+
+    // Apply the loaded data if found
+    if (data) {
+      console.log(`Loaded game data from ${source}:`, data)
+
+      // Apply the data to game variables
+      clicks = typeof data.clicks === "number" ? data.clicks : 0
+      currency = typeof data.currency === "number" ? data.currency : 0
+      energy = typeof data.energy === "number" ? data.energy : maxEnergy
+
+      // Calculate time passed for energy regeneration
+      if (data.timestamp) {
+        const timePassed = Date.now() - data.timestamp
+        lastTimestamp = Date.now() - timePassed
+      } else {
+        lastTimestamp = Date.now()
+      }
+
+      // Update UI with loaded data
+      updateUI()
+
+      // Immediately save the loaded data to all storage methods
+      saveGameData()
+
+      return true
+    } else {
+      console.log("No saved game data found")
+      return false
+    }
   } catch (error) {
-    console.error("Error loading game data:", error)
-    // Don't reset game here
+    console.error("Error in loadGameData:", error)
+    return false
   }
 }
+
+// ===== GAME MECHANICS =====
 
 // Regenerate energy based on time passed
 function regenerateEnergy() {
   const currentTime = Date.now()
   const timePassed = currentTime - lastTimestamp
 
-  if (energy < maxEnergy) {
+  if (energy < maxEnergy && timePassed > 0) {
     // Calculate energy to add
     const energyToAdd = timePassed * ENERGY_REGEN_RATE
 
@@ -204,7 +250,7 @@ function regenerateEnergy() {
     energy = Math.min(maxEnergy, energy + energyToAdd)
 
     // Update timestamp
-    //lastTimestamp = currentTime;
+    lastTimestamp = currentTime
 
     // Save the updated energy
     saveGameData()
@@ -301,171 +347,10 @@ function isClickValid() {
   return true
 }
 
-// Sync game state with server periodically
-function syncWithServer() {
-  const now = Date.now()
-
-  // Only sync every SYNC_INTERVAL ms
-  if (now - lastSyncTimestamp < SYNC_INTERVAL) {
-    return
-  }
-
-  lastSyncTimestamp = now
-
-  // Create a signature for the data
-  const signature = calculateChecksum(clicks, energy, currency)
-
-  // Send data to the bot with signature
-  try {
-    const data = {
-      clicks: clicks,
-      currency: currency,
-      energy: energy,
-      signature: signature,
-      token: securityToken,
-      timestamp: now,
-    }
-
-    // We don't actually send this data unless currency is earned
-    // But we update the timestamp to track sync intervals
-    console.log("Sync data prepared:", data)
-  } catch (error) {
-    console.error("Error preparing sync data:", error)
-  }
-}
-
-// Challenge response handling
-let pendingChallenge = null
-
-// Function to handle security challenges from the server
-function handleSecurityChallenge(challengeToken) {
-  pendingChallenge = challengeToken
-
-  // Show challenge input dialog
-  tg.showPopup(
-    {
-      title: "Security Verification",
-      message: "Please enter the security code you received in the bot:",
-      buttons: [
-        { id: "submit", type: "default", text: "Submit" },
-        { id: "cancel", type: "cancel" },
-      ],
-    },
-    (buttonId) => {
-      if (buttonId === "submit") {
-        // Show text input for the challenge code
-        tg.showPopup(
-          {
-            title: "Enter Code",
-            message: "Enter the security code:",
-            buttons: [{ type: "ok" }],
-          },
-          (buttonId, value) => {
-            if (value && value.trim() === pendingChallenge) {
-              // Correct challenge response
-              tg.showPopup({
-                title: "Verification Successful",
-                message: "Thank you for verifying your account.",
-                buttons: [{ type: "ok" }],
-              })
-              pendingChallenge = null
-            } else {
-              // Incorrect challenge response
-              tg.showPopup({
-                title: "Verification Failed",
-                message: "Incorrect security code. Please try again.",
-                buttons: [{ type: "ok" }],
-              })
-            }
-          },
-        )
-      } else {
-        pendingChallenge = null
-      }
-    },
-  )
-}
-
-// Modify the sendDataToBot function to include more security data
-function sendDataToBot() {
-  try {
-    // Create a signature for the data
-    const signature = calculateChecksum(clicks, energy, currency)
-
-    // Include more detailed data for server verification
-    const data = {
-      clicks: clicks,
-      currency: currency,
-      energy: energy,
-      event: "currency_earned",
-      signature: signature,
-      token: securityToken,
-      timestamp: Date.now(),
-      // Include session data
-      sessionDuration: Date.now() - lastTimestamp,
-      // Include click pattern data
-      clickPatterns: clickTimestamps.slice(-20), // Last 20 click timestamps
-      // Include challenge response if pending
-      challengeResponse: pendingChallenge,
-    }
-
-    tg.sendData(JSON.stringify(data))
-
-    // Generate a new security token after each reward
-    securityToken = generateSecurityToken()
-  } catch (error) {
-    console.error("Error sending data to bot:", error)
-  }
-}
-
-// Add event listener for bot messages (for challenge handling)
-tg.onEvent("message", (message) => {
-  if (message && message.text && message.text.includes("Security verification")) {
-    // Extract challenge token from message
-    const match = message.text.match(/code in the game: ([a-f0-9]{16})/)
-    if (match && match[1]) {
-      handleSecurityChallenge(match[1])
-    }
-  }
-})
-
-// Add more event listeners to catch app closing
-window.addEventListener("pagehide", () => {
-  console.log("Page hide event - saving game data")
-  saveGameData()
-})
-
-window.addEventListener("unload", () => {
-  console.log("Unload event - saving game data")
-  saveGameData()
-})
-
-// Add Telegram specific events
-tg.onEvent("back_button_pressed", () => {
-  console.log("Back button pressed - saving game data")
-  saveGameData()
-})
-
-tg.onEvent("main_button_pressed", () => {
-  saveGameData()
-})
-
-tg.onEvent("settings_button_pressed", () => {
-  saveGameData()
-})
-
-// Save more frequently during gameplay
-setInterval(() => {
-  saveGameData()
-}, 5000) // Save every 5 seconds
+// ===== EVENT HANDLERS =====
 
 // Handle click on the click area
 clickArea.addEventListener("click", (event) => {
-  // Run security check
-  if (!performSecurityCheck()) {
-    return
-  }
-
   // Check if we have energy
   if (energy <= 0) {
     // Show notification that energy is depleted
@@ -500,15 +385,9 @@ clickArea.addEventListener("click", (event) => {
   energy--
   clicks++
 
-  // Save data after EACH click to ensure no clicks are lost
-  saveGameData()
-
   // Check if user earned currency
   if (clicks % CLICKS_PER_CURRENCY === 0) {
     currency++
-
-    // Send data to the bot with security measures
-    sendDataToBot()
 
     // Show notification
     tg.showPopup({
@@ -521,84 +400,98 @@ clickArea.addEventListener("click", (event) => {
   // Update UI
   updateUI()
 
-  // Sync with server periodically
-  syncWithServer()
+  // Save data after EACH click to ensure no clicks are lost
+  saveGameData()
 })
 
 // Add event listeners to detect page visibility changes
 document.addEventListener("visibilitychange", () => {
   if (document.visibilityState === "visible") {
-    // When page becomes visible again, perform security check
-    performSecurityCheck()
+    // When page becomes visible again
     regenerateEnergy()
     updateUI()
+    console.log("Page visible - current clicks:", clicks)
+  } else {
+    // When page becomes hidden
+    saveGameData()
+    console.log("Page hidden - saving game data")
   }
 })
-
-// Override console methods to make debugging harder
-const originalConsole = {
-  log: console.log,
-  warn: console.warn,
-  error: console.error,
-  info: console.info,
-  debug: console.debug,
-}
 
 // Save game data when page is about to unload
 window.addEventListener("beforeunload", () => {
   saveGameData()
+  console.log("Page unloading - saving game data")
 })
 
-// Save game data when Telegram WebApp is about to close
+// Add more event listeners to catch app closing
+window.addEventListener("pagehide", () => {
+  saveGameData()
+  console.log("Page hide event - saving game data")
+})
+
+// Telegram specific events
 tg.onEvent("viewportChanged", () => {
   saveGameData()
+  console.log("Viewport changed - saving game data")
 })
 
-// In production, you might want to disable console completely
-// This is just a simple deterrent
-console.log = () => {
-  // Still log errors for legitimate debugging
-  originalConsole.log.apply(originalConsole, arguments)
-  performSecurityCheck()
-}
+tg.onEvent("back_button_pressed", () => {
+  saveGameData()
+  console.log("Back button pressed - saving game data")
+})
 
-console.warn = () => {
-  originalConsole.warn.apply(originalConsole, arguments)
-  performSecurityCheck()
-}
+tg.onEvent("main_button_pressed", () => {
+  saveGameData()
+  console.log("Main button pressed - saving game data")
+})
 
-console.error = () => {
-  originalConsole.error.apply(originalConsole, arguments)
-  performSecurityCheck()
-}
+// Save data periodically
+const saveInterval = setInterval(() => {
+  saveGameData()
+}, 3000) // Save every 3 seconds
 
 // Energy regeneration timer
-setInterval(() => {
+const energyInterval = setInterval(() => {
   regenerateEnergy()
   updateUI()
-  performSecurityCheck() // Regularly check for tampering
 }, 1000) // Update every second
+
+// ===== INITIALIZATION =====
 
 // Initialize the game
 function initGame() {
+  console.log("Initializing game...")
+
   // First try to load any saved data
-  loadGameData()
+  const dataLoaded = loadGameData()
 
-  // Make sure UI is updated with loaded data
-  updateUI()
+  if (!dataLoaded) {
+    // If no data was loaded, set default values
+    clicks = 0
+    currency = 0
+    energy = maxEnergy
+    lastTimestamp = Date.now()
 
-  // Save initial state to ensure data consistency
-  saveGameData()
+    // Update UI with default values
+    updateUI()
+
+    // Save initial state
+    saveGameData()
+  }
 
   // Tell Telegram the app is ready
   tg.ready()
-
-  // Initial security check
-  performSecurityCheck()
 
   console.log("Game initialized with:", { clicks, currency, energy })
 }
 
 // Start the game
 initGame()
+
+// Add a global error handler to catch and log any errors
+window.onerror = (message, source, lineno, colno, error) => {
+  console.error("Global error:", message, "at", source, lineno, colno, error)
+  return true
+}
 
