@@ -30,6 +30,24 @@ const energyBar = document.getElementById("energyBar")
 const energyText = document.getElementById("energyText")
 const energyTimeElement = document.getElementById("energyTime")
 
+// Проверка наличия всех необходимых DOM-элементов
+if (
+  !clicksElement ||
+  !currencyElement ||
+  !clickArea ||
+  !progressBar ||
+  !progressText ||
+  !energyBar ||
+  !energyText ||
+  !energyTimeElement
+) {
+  console.error("Не удалось найти все необходимые DOM-элементы")
+  // Ждем загрузки DOM и повторно пытаемся получить элементы
+  document.addEventListener("DOMContentLoaded", () => {
+    location.reload()
+  })
+}
+
 // Generate a security token
 function generateSecurityToken() {
   return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
@@ -290,32 +308,35 @@ function calculateTimeUntilFullEnergy() {
   return `${minutes}m ${seconds}s`
 }
 
-// Update UI elements
+// Исправление функции updateUI, чтобы она не блокировалась флагом gameInitialized
 function updateUI() {
-  if (!gameInitialized) return
+  // Удаляем проверку gameInitialized, чтобы UI всегда обновлялся
+  // if (!gameInitialized) return;
 
-  clicksElement.textContent = clicks.toLocaleString()
-  currencyElement.textContent = currency.toLocaleString()
+  if (clicksElement) clicksElement.textContent = clicks.toLocaleString()
+  if (currencyElement) currencyElement.textContent = currency.toLocaleString()
 
   // Update progress bar
   const clicksTowardsCurrency = clicks % CLICKS_PER_CURRENCY
   const progressPercentage = (clicksTowardsCurrency / CLICKS_PER_CURRENCY) * 100
-  progressBar.style.width = `${progressPercentage}%`
-  progressText.textContent = clicksTowardsCurrency.toLocaleString()
+  if (progressBar) progressBar.style.width = `${progressPercentage}%`
+  if (progressText) progressText.textContent = clicksTowardsCurrency.toLocaleString()
 
   // Update energy display
   const energyPercentage = (energy / maxEnergy) * 100
-  energyBar.style.width = `${energyPercentage}%`
-  energyText.textContent = `${Math.floor(energy)}/${maxEnergy}`
+  if (energyBar) energyBar.style.width = `${energyPercentage}%`
+  if (energyText) energyText.textContent = `${Math.floor(energy)}/${maxEnergy}`
 
   // Update time until full energy
-  energyTimeElement.textContent = calculateTimeUntilFullEnergy()
+  if (energyTimeElement) energyTimeElement.textContent = calculateTimeUntilFullEnergy()
 
   // Update click area appearance based on energy
-  if (energy <= 0) {
-    clickArea.classList.add("disabled")
-  } else {
-    clickArea.classList.remove("disabled")
+  if (clickArea) {
+    if (energy <= 0) {
+      clickArea.classList.add("disabled")
+    } else {
+      clickArea.classList.remove("disabled")
+    }
   }
 }
 
@@ -500,73 +521,85 @@ tg.onEvent("message", (message) => {
   }
 })
 
+// Исправление обработчика клика
+// Заменить весь обработчик события клика на следующий код:
+
 // Handle click on the click area
-clickArea.addEventListener("click", (event) => {
-  // Run security check
-  if (!performSecurityCheck()) {
-    return
-  }
+if (clickArea) {
+  clickArea.addEventListener("click", (event) => {
+    console.log("Click detected")
 
-  // Check if we have energy
-  if (energy <= 0) {
-    // Show notification that energy is depleted
-    tg.showPopup({
-      title: "No Energy",
-      message: "You're out of energy! Wait for it to regenerate.",
-      buttons: [{ type: "ok" }],
-    })
-    return
-  }
+    // Run security check
+    if (!performSecurityCheck()) {
+      console.error("Security check failed")
+      return
+    }
 
-  // Validate click rate
-  if (!isClickValid()) {
-    tg.showPopup({
-      title: "Warning",
-      message: "Clicking too fast! Please slow down.",
-      buttons: [{ type: "ok" }],
-    })
-    return
-  }
+    // Check if we have energy
+    if (energy <= 0) {
+      // Show notification that energy is depleted
+      tg.showPopup({
+        title: "No Energy",
+        message: "You're out of energy! Wait for it to regenerate.",
+        buttons: [{ type: "ok" }],
+      })
+      return
+    }
 
-  // Add click effect
-  clickArea.classList.add("click-effect")
-  setTimeout(() => {
-    clickArea.classList.remove("click-effect")
-  }, 200)
+    // Validate click rate
+    if (!isClickValid()) {
+      tg.showPopup({
+        title: "Warning",
+        message: "Clicking too fast! Please slow down.",
+        buttons: [{ type: "ok" }],
+      })
+      return
+    }
 
-  // Add ripple effect
-  createRipple(event)
+    // Add click effect
+    clickArea.classList.add("click-effect")
+    setTimeout(() => {
+      clickArea.classList.remove("click-effect")
+    }, 200)
 
-  // Decrement energy and increment clicks
-  energy--
-  clicks++
+    // Add ripple effect
+    createRipple(event)
 
-  // Check if user earned currency
-  if (clicks % CLICKS_PER_CURRENCY === 0) {
-    currency++
+    // Decrement energy and increment clicks
+    energy--
+    clicks++
 
-    // Send data to the bot with security measures
-    sendDataToBot()
+    console.log("Click processed. New count:", clicks)
 
-    // Show notification
-    tg.showPopup({
-      title: "Congratulations!",
-      message: "You've earned 1 internal currency!",
-      buttons: [{ type: "ok" }],
-    })
-  }
+    // Check if user earned currency
+    if (clicks % CLICKS_PER_CURRENCY === 0) {
+      currency++
 
-  // Update UI
-  updateUI()
+      // Send data to the bot with security measures
+      sendDataToBot()
 
-  // Save data every 10 clicks
-  if (clicks % 10 === 0) {
-    saveGameData()
-  }
+      // Show notification
+      tg.showPopup({
+        title: "Congratulations!",
+        message: "You've earned 1 internal currency!",
+        buttons: [{ type: "ok" }],
+      })
+    }
 
-  // Sync with server periodically
-  syncWithServer()
-})
+    // Update UI immediately after incrementing clicks
+    updateUI()
+
+    // Save data every 10 clicks
+    if (clicks % 10 === 0) {
+      saveGameData()
+    }
+
+    // Sync with server periodically
+    syncWithServer()
+  })
+} else {
+  console.error("Click area element not found!")
+}
 
 // Add event listeners to detect page visibility changes
 document.addEventListener("visibilitychange", () => {
@@ -613,8 +646,10 @@ setInterval(() => {
   saveGameData()
 }, 30000) // Save every 30 seconds
 
-// Initialize the game
+// Исправление функции initGame для правильной инициализации
 function initGame() {
+  console.log("Initializing game...")
+
   // Set initialized flag to false until loading is complete
   gameInitialized = false
 
@@ -628,6 +663,7 @@ function initGame() {
     energy = maxEnergy
     lastTimestamp = Date.now()
     securityToken = generateSecurityToken()
+    console.log("Initialized with default values")
   }
 
   // Mark as initialized so UI updates work
@@ -643,6 +679,19 @@ function initGame() {
   performSecurityCheck()
 
   console.log("Game initialized with clicks:", clicks, "currency:", currency)
+
+  // Ensure DOM elements are available
+  if (!clickArea) {
+    console.error("Click area not found during initialization!")
+    // Try to find it again after a short delay
+    setTimeout(() => {
+      const clickAreaRetry = document.getElementById("clickArea")
+      if (clickAreaRetry) {
+        console.log("Click area found on retry")
+        location.reload() // Reload the page to reinitialize properly
+      }
+    }, 1000)
+  }
 }
 
 // Start the game
