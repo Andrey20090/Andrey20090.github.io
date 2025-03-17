@@ -365,8 +365,8 @@ clickArea.addEventListener("click", (event) => {
   // Validate click rate
   if (!isClickValid()) {
     tg.showPopup({
-      title: "Warning",
-      message: "Clicking too fast! Please slow down.",
+      title: "Внимание!",
+      message: "Вы подозриваетесь в авто-кликере. Пожалуйста , нажимайте медленнее",
       buttons: [{ type: "ok" }],
     })
     return
