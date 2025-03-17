@@ -308,60 +308,113 @@ function calculateTimeUntilFullEnergy() {
   return `${minutes}m ${seconds}s`
 }
 
-// Исправление функции updateUI, чтобы она не блокировалась флагом gameInitialized
+// Update UI elements - SIMPLIFIED VERSION
 function updateUI() {
-  // Удаляем проверку gameInitialized, чтобы UI всегда обновлялся
-  // if (!gameInitialized) return;
+  try {
+    // Get DOM elements every time to ensure we have the latest references
+    const clicksElement = document.getElementById("clicks")
+    const currencyElement = document.getElementById("currency")
+    const progressBar = document.getElementById("progressBar")
+    const progressText = document.getElementById("progressText")
+    const energyBar = document.getElementById("energyBar")
+    const energyText = document.getElementById("energyText")
+    const energyTimeElement = document.getElementById("energyTime")
+    const clickArea = document.getElementById("clickArea")
 
-  if (clicksElement) clicksElement.textContent = clicks.toLocaleString()
-  if (currencyElement) currencyElement.textContent = currency.toLocaleString()
-
-  // Update progress bar
-  const clicksTowardsCurrency = clicks % CLICKS_PER_CURRENCY
-  const progressPercentage = (clicksTowardsCurrency / CLICKS_PER_CURRENCY) * 100
-  if (progressBar) progressBar.style.width = `${progressPercentage}%`
-  if (progressText) progressText.textContent = clicksTowardsCurrency.toLocaleString()
-
-  // Update energy display
-  const energyPercentage = (energy / maxEnergy) * 100
-  if (energyBar) energyBar.style.width = `${energyPercentage}%`
-  if (energyText) energyText.textContent = `${Math.floor(energy)}/${maxEnergy}`
-
-  // Update time until full energy
-  if (energyTimeElement) energyTimeElement.textContent = calculateTimeUntilFullEnergy()
-
-  // Update click area appearance based on energy
-  if (clickArea) {
-    if (energy <= 0) {
-      clickArea.classList.add("disabled")
+    // Update clicks display
+    if (clicksElement) {
+      clicksElement.textContent = clicks.toLocaleString()
+      console.log("Updated clicks display to:", clicks)
     } else {
-      clickArea.classList.remove("disabled")
+      console.error("clicks element not found")
     }
+
+    // Update currency display
+    if (currencyElement) {
+      currencyElement.textContent = currency.toLocaleString()
+    } else {
+      console.error("currency element not found")
+    }
+
+    // Update progress bar
+    const clicksTowardsCurrency = clicks % CLICKS_PER_CURRENCY
+    const progressPercentage = (clicksTowardsCurrency / CLICKS_PER_CURRENCY) * 100
+
+    if (progressBar) {
+      progressBar.style.width = `${progressPercentage}%`
+    } else {
+      console.error("progressBar element not found")
+    }
+
+    if (progressText) {
+      progressText.textContent = clicksTowardsCurrency.toLocaleString()
+    } else {
+      console.error("progressText element not found")
+    }
+
+    // Update energy display
+    const energyPercentage = (energy / maxEnergy) * 100
+
+    if (energyBar) {
+      energyBar.style.width = `${energyPercentage}%`
+    } else {
+      console.error("energyBar element not found")
+    }
+
+    if (energyText) {
+      energyText.textContent = `${Math.floor(energy)}/${maxEnergy}`
+    } else {
+      console.error("energyText element not found")
+    }
+
+    // Update time until full energy
+    if (energyTimeElement) {
+      energyTimeElement.textContent = calculateTimeUntilFullEnergy()
+    } else {
+      console.error("energyTimeElement element not found")
+    }
+
+    // Update click area appearance based on energy
+    if (clickArea) {
+      if (energy <= 0) {
+        clickArea.classList.add("disabled")
+      } else {
+        clickArea.classList.remove("disabled")
+      }
+    } else {
+      console.error("clickArea element not found")
+    }
+  } catch (error) {
+    console.error("Error updating UI:", error)
   }
 }
 
 // Create ripple effect
 function createRipple(event) {
-  const clickArea = event.currentTarget
+  try {
+    const clickArea = event.currentTarget
 
-  const circle = document.createElement("span")
-  const diameter = Math.max(clickArea.clientWidth, clickArea.clientHeight)
-  const radius = diameter / 2
+    const circle = document.createElement("span")
+    const diameter = Math.max(clickArea.clientWidth, clickArea.clientHeight)
+    const radius = diameter / 2
 
-  const rect = clickArea.getBoundingClientRect()
+    const rect = clickArea.getBoundingClientRect()
 
-  circle.style.width = circle.style.height = `${diameter}px`
-  circle.style.left = `${event.clientX - rect.left - radius}px`
-  circle.style.top = `${event.clientY - rect.top - radius}px`
-  circle.classList.add("ripple")
+    circle.style.width = circle.style.height = `${diameter}px`
+    circle.style.left = `${event.clientX - rect.left - radius}px`
+    circle.style.top = `${event.clientY - rect.top - radius}px`
+    circle.classList.add("ripple")
 
-  const ripple = clickArea.getElementsByClassName("ripple")[0]
+    const ripple = clickArea.getElementsByClassName("ripple")[0]
 
-  if (ripple) {
-    ripple.remove()
+    if (ripple) {
+      ripple.remove()
+    }
+
+    clickArea.appendChild(circle)
+  } catch (error) {
+    console.error("Error creating ripple:", error)
   }
-
-  clickArea.appendChild(circle)
 }
 
 // Check for click rate limiting
@@ -521,118 +574,199 @@ tg.onEvent("message", (message) => {
   }
 })
 
-// Исправление обработчика клика
-// Заменить весь обработчик события клика на следующий код:
+// НОВАЯ ФУНКЦИЯ: Обработка клика
+function handleClick(event) {
+  console.log("Click detected!")
 
-// Handle click on the click area
-if (clickArea) {
-  clickArea.addEventListener("click", (event) => {
-    console.log("Click detected")
+  // Увеличиваем счетчик кликов напрямую
+  clicks++
+  console.log("Clicks incremented to:", clicks)
 
-    // Run security check
-    if (!performSecurityCheck()) {
-      console.error("Security check failed")
-      return
-    }
+  // Уменьшаем энергию
+  if (energy > 0) {
+    energy--
+  }
 
-    // Check if we have energy
-    if (energy <= 0) {
-      // Show notification that energy is depleted
-      tg.showPopup({
-        title: "No Energy",
-        message: "You're out of energy! Wait for it to regenerate.",
-        buttons: [{ type: "ok" }],
-      })
-      return
-    }
+  // Проверяем, заработал ли пользователь валюту
+  if (clicks % CLICKS_PER_CURRENCY === 0) {
+    currency++
+    console.log("Currency earned! New value:", currency)
 
-    // Validate click rate
-    if (!isClickValid()) {
-      tg.showPopup({
-        title: "Warning",
-        message: "Clicking too fast! Please slow down.",
-        buttons: [{ type: "ok" }],
-      })
-      return
-    }
+    // Отправляем данные боту
+    sendDataToBot()
 
-    // Add click effect
+    // Показываем уведомление
+    tg.showPopup({
+      title: "Congratulations!",
+      message: "You've earned 1 internal currency!",
+      buttons: [{ type: "ok" }],
+    })
+  }
+
+  // Добавляем эффект клика
+  try {
+    const clickArea = event.currentTarget
     clickArea.classList.add("click-effect")
     setTimeout(() => {
       clickArea.classList.remove("click-effect")
     }, 200)
 
-    // Add ripple effect
+    // Добавляем эффект ряби
     createRipple(event)
+  } catch (error) {
+    console.error("Error adding click effect:", error)
+  }
 
-    // Decrement energy and increment clicks
-    energy--
-    clicks++
+  // Обновляем UI
+  updateUI()
 
-    console.log("Click processed. New count:", clicks)
+  // Сохраняем данные каждые 10 кликов
+  if (clicks % 10 === 0) {
+    saveGameData()
+  }
+}
 
-    // Check if user earned currency
-    if (clicks % CLICKS_PER_CURRENCY === 0) {
-      currency++
+// НОВАЯ ФУНКЦИЯ: Настройка обработчиков событий
+function setupEventListeners() {
+  console.log("Setting up event listeners...")
 
-      // Send data to the bot with security measures
-      sendDataToBot()
+  try {
+    // Находим элемент clickArea
+    const clickArea = document.getElementById("clickArea")
 
-      // Show notification
-      tg.showPopup({
-        title: "Congratulations!",
-        message: "You've earned 1 internal currency!",
-        buttons: [{ type: "ok" }],
+    if (clickArea) {
+      console.log("Click area found, attaching event listener")
+
+      // Удаляем все существующие обработчики
+      const newClickArea = clickArea.cloneNode(true)
+      clickArea.parentNode.replaceChild(newClickArea, clickArea)
+
+      // Добавляем новый обработчик
+      newClickArea.addEventListener("click", handleClick)
+
+      // Также добавляем обработчик на весь документ как запасной вариант
+      document.addEventListener("click", (event) => {
+        // Проверяем, был ли клик по clickArea или его потомку
+        let target = event.target
+        while (target != null) {
+          if (target.id === "clickArea") {
+            console.log("Click detected through document event delegation")
+            return // Не обрабатываем, так как основной обработчик уже сработает
+          }
+          target = target.parentElement
+        }
+      })
+
+      console.log("Event listeners attached successfully")
+    } else {
+      console.error("Click area not found!")
+
+      // Проб��ем найти по классу или другим атрибутам
+      const possibleClickAreas = document.querySelectorAll(".click-area, [data-click-area], .clicker, .button")
+
+      if (possibleClickAreas.length > 0) {
+        console.log("Found possible click areas:", possibleClickAreas.length)
+
+        // Добавляем обработчики на все возможные элементы
+        possibleClickAreas.forEach((element, index) => {
+          console.log(`Attaching click handler to possible click area ${index}`)
+          element.addEventListener("click", handleClick)
+        })
+      } else {
+        console.error("No possible click areas found!")
+
+        // Крайний случай: добавляем обработчик на весь документ
+        document.addEventListener("click", (event) => {
+          console.log("Document click detected as fallback")
+          handleClick(event)
+        })
+      }
+    }
+
+    // Добавляем обработчики для других событий
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "hidden") {
+        saveGameData()
+      } else if (document.visibilityState === "visible") {
+        performSecurityCheck()
+        regenerateEnergy()
+        updateUI()
+      }
+    })
+
+    window.addEventListener("beforeunload", () => {
+      saveGameData()
+    })
+
+    tg.BackButton.onClick(() => {
+      saveGameData()
+    })
+
+    tg.MainButton.onClick(() => {
+      saveGameData()
+    })
+
+    tg.onEvent("viewportChanged", () => {
+      saveGameData()
+    })
+
+    console.log("All event listeners set up successfully")
+    return true
+  } catch (error) {
+    console.error("Error setting up event listeners:", error)
+    return false
+  }
+}
+
+// НОВАЯ ФУНКЦИЯ: Проверка HTML-структуры
+function checkHTMLStructure() {
+  console.log("Checking HTML structure...")
+
+  // Проверяем наличие всех необходимых элементов
+  const requiredElements = [
+    "clicks",
+    "currency",
+    "clickArea",
+    "progressBar",
+    "progressText",
+    "energyBar",
+    "energyText",
+    "energyTimeElement",
+  ]
+
+  const missingElements = []
+
+  requiredElements.forEach((id) => {
+    const element = document.getElementById(id)
+    if (!element) {
+      missingElements.push(id)
+      console.error(`Required element "${id}" not found!`)
+    } else {
+      console.log(`Found element "${id}": ${element.tagName}`)
+    }
+  })
+
+  if (missingElements.length > 0) {
+    console.error(`Missing ${missingElements.length} required elements:`, missingElements)
+
+    // Проверяем, есть ли элемент clickArea с другим ID или классом
+    const possibleClickAreas = document.querySelectorAll(".click-area, [data-click-area], .clicker, .button")
+    if (possibleClickAreas.length > 0) {
+      console.log("Found possible alternative click areas:", possibleClickAreas.length)
+      possibleClickAreas.forEach((element, index) => {
+        console.log(`Possible click area ${index}:`, element.tagName, element.id, element.className)
       })
     }
 
-    // Update UI immediately after incrementing clicks
-    updateUI()
+    // Выводим всю HTML-структуру для отладки
+    console.log("Full HTML structure:", document.documentElement.outerHTML)
 
-    // Save data every 10 clicks
-    if (clicks % 10 === 0) {
-      saveGameData()
-    }
-
-    // Sync with server periodically
-    syncWithServer()
-  })
-} else {
-  console.error("Click area element not found!")
-}
-
-// Add event listeners to detect page visibility changes
-document.addEventListener("visibilitychange", () => {
-  if (document.visibilityState === "hidden") {
-    // Save game data when page is hidden (app is minimized or closed)
-    saveGameData()
-  } else if (document.visibilityState === "visible") {
-    // When page becomes visible again, perform security check
-    performSecurityCheck()
-    regenerateEnergy()
-    updateUI()
+    return false
   }
-})
 
-// Add event listener for beforeunload to save data when the app is closed
-window.addEventListener("beforeunload", () => {
-  saveGameData()
-})
-
-// Add event listener for Telegram's back button
-tg.BackButton.onClick(() => {
-  saveGameData()
-})
-
-// Add event listener for Telegram's main button
-tg.MainButton.onClick(() => {
-  saveGameData()
-})
-
-// Add event listener for Telegram's closing event
-tg.onEvent("viewportChanged", () => {
-  saveGameData()
-})
+  console.log("HTML structure check passed")
+  return true
+}
 
 // Energy regeneration timer
 setInterval(() => {
@@ -646,54 +780,158 @@ setInterval(() => {
   saveGameData()
 }, 30000) // Save every 30 seconds
 
-// Исправление функции initGame для правильной инициализации
-function initGame() {
-  console.log("Initializing game...")
+// НОВАЯ ФУНКЦИЯ: Инициализация игры с повторными попытками
+function initGameWithRetry(retryCount = 0, maxRetries = 5) {
+  console.log(`Initializing game (attempt ${retryCount + 1} of ${maxRetries})...`)
 
-  // Set initialized flag to false until loading is complete
-  gameInitialized = false
+  try {
+    // Проверяем HTML-структуру
+    const structureValid = checkHTMLStructure()
 
-  // Try to load saved data
-  const dataLoaded = loadGameData()
+    if (!structureValid && retryCount < maxRetries) {
+      console.log(`HTML structure check failed, retrying in ${(retryCount + 1) * 500}ms...`)
+      setTimeout(() => initGameWithRetry(retryCount + 1, maxRetries), (retryCount + 1) * 500)
+      return
+    }
 
-  // If no data was loaded, initialize with defaults
-  if (!dataLoaded) {
-    clicks = 0
-    currency = 0
-    energy = maxEnergy
-    lastTimestamp = Date.now()
-    securityToken = generateSecurityToken()
-    console.log("Initialized with default values")
-  }
+    // Загружаем сохраненные данные
+    const dataLoaded = loadGameData()
 
-  // Mark as initialized so UI updates work
-  gameInitialized = true
+    if (!dataLoaded) {
+      console.log("No saved data found, initializing with defaults")
+      clicks = 0
+      currency = 0
+      energy = maxEnergy
+      lastTimestamp = Date.now()
+      securityToken = generateSecurityToken()
+    }
 
-  // Update UI with loaded or default values
-  updateUI()
+    // Настраиваем обработчики событий
+    const eventListenersSet = setupEventListeners()
 
-  // Tell Telegram WebApp we're ready
-  tg.ready()
+    if (!eventListenersSet && retryCount < maxRetries) {
+      console.log(`Failed to set up event listeners, retrying in ${(retryCount + 1) * 500}ms...`)
+      setTimeout(() => initGameWithRetry(retryCount + 1, maxRetries), (retryCount + 1) * 500)
+      return
+    }
 
-  // Initial security check
-  performSecurityCheck()
+    // Отмечаем игру как инициализированную
+    gameInitialized = true
 
-  console.log("Game initialized with clicks:", clicks, "currency:", currency)
+    // Обновляем UI
+    updateUI()
 
-  // Ensure DOM elements are available
-  if (!clickArea) {
-    console.error("Click area not found during initialization!")
-    // Try to find it again after a short delay
-    setTimeout(() => {
-      const clickAreaRetry = document.getElementById("clickArea")
-      if (clickAreaRetry) {
-        console.log("Click area found on retry")
-        location.reload() // Reload the page to reinitialize properly
-      }
-    }, 1000)
+    // Сообщаем Telegram WebApp, что мы готовы
+    tg.ready()
+
+    console.log("Game initialized successfully with clicks:", clicks, "currency:", currency)
+
+    // Добавляем глобальный обработчик ошибок
+    window.onerror = (message, source, lineno, colno, error) => {
+      console.error("Global error:", message, "at", source, lineno, colno, error)
+      return false
+    }
+
+    // Добавляем обработчик непойманных промисов
+    window.addEventListener("unhandledrejection", (event) => {
+      console.error("Unhandled promise rejection:", event.reason)
+    })
+
+    // Проверяем работу обработчика клика
+    console.log("Testing click handler...")
+    const clickArea = document.getElementById("clickArea")
+    if (clickArea) {
+      console.log("Click area found, simulating click...")
+      // Создаем и диспатчим событие клика
+      const clickEvent = new MouseEvent("click", {
+        bubbles: true,
+        cancelable: true,
+        view: window,
+      })
+      clickArea.dispatchEvent(clickEvent)
+    }
+  } catch (error) {
+    console.error("Error during game initialization:", error)
+
+    if (retryCount < maxRetries) {
+      console.log(`Initialization failed, retrying in ${(retryCount + 1) * 1000}ms...`)
+      setTimeout(() => initGameWithRetry(retryCount + 1, maxRetries), (retryCount + 1) * 1000)
+    } else {
+      console.error("Max retries reached, initialization failed")
+      alert("Failed to initialize the game. Please reload the page.")
+    }
   }
 }
 
-// Start the game
-initGame()
+// Запускаем инициализацию игры с повторными попытками
+document.addEventListener("DOMContentLoaded", () => {
+  console.log("DOM content loaded, starting game initialization...")
+  initGameWithRetry()
+})
+
+// Также запускаем инициализацию при загрузке страницы (на случай, если DOMContentLoaded уже произошел)
+if (document.readyState === "complete" || document.readyState === "interactive") {
+  console.log("Document already loaded, starting game initialization...")
+  setTimeout(initGameWithRetry, 100)
+}
+
+// ЭКСТРЕННОЕ ИСПРАВЛЕНИЕ: Добавляем прямой обработчик клика на документ
+document.addEventListener("click", (event) => {
+  // Проверяем, был ли клик по элементу с id "clickArea" или его потомку
+  let target = event.target
+  let isClickArea = false
+
+  while (target != null) {
+    if (target.id === "clickArea") {
+      isClickArea = true
+      break
+    }
+    target = target.parentElement
+  }
+
+  if (isClickArea) {
+    console.log("Click on clickArea detected through document event listener")
+
+    // Увеличиваем счетчик кликов напрямую
+    clicks++
+    console.log("Clicks incremented to:", clicks)
+
+    // Уменьшаем энергию
+    if (energy > 0) {
+      energy--
+    }
+
+    // Проверяем, заработал ли пользователь валюту
+    if (clicks % CLICKS_PER_CURRENCY === 0) {
+      currency++
+      console.log("Currency earned! New value:", currency)
+
+      // Отправляем данные боту
+      sendDataToBot()
+
+      // Показываем уведомление
+      tg.showPopup({
+        title: "Congratulations!",
+        message: "You've earned 1 internal currency!",
+        buttons: [{ type: "ok" }],
+      })
+    }
+
+    // Обновляем UI
+    updateUI()
+
+    // Сохраняем данные каждые 10 кликов
+    if (clicks % 10 === 0) {
+      saveGameData()
+    }
+  }
+})
+
+// ЭКСТРЕННОЕ ИСПРАВЛЕНИЕ: Добавляем прямое обновление счетчика кликов в HTML
+setInterval(() => {
+  const clicksElement = document.getElementById("clicks")
+  if (clicksElement) {
+    clicksElement.textContent = clicks.toLocaleString()
+  }
+}, 100) // Обновляем каждые 100 мс
 
