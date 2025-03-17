@@ -138,6 +138,11 @@ function loadGameData() {
           lastTimestamp = data.lastTimestamp || Date.now()
           securityToken = data.securityToken || generateSecurityToken()
 
+          // Calculate time passed since last save
+          const currentTime = Date.now()
+          const timePassed = currentTime - lastTimestamp
+          lastTimestamp = currentTime
+
           // Regenerate energy based on time passed
           regenerateEnergy()
           updateUI()
@@ -167,7 +172,7 @@ function saveGameData() {
         clicks: clicks,
         currency: currency,
         energy: energy,
-        lastTimestamp: Date.now(),
+        lastTimestamp: lastTimestamp,
         securityToken: securityToken,
         checksum: checksum,
       }
@@ -191,7 +196,7 @@ function regenerateEnergy() {
     energy = Math.min(maxEnergy, energy + energyToAdd)
 
     // Update timestamp
-    lastTimestamp = currentTime
+    //lastTimestamp = currentTime;
 
     // Save the updated energy
     saveGameData()
@@ -503,6 +508,16 @@ const originalConsole = {
   debug: console.debug,
 }
 
+// Save game data when page is about to unload
+window.addEventListener("beforeunload", () => {
+  saveGameData()
+})
+
+// Save game data when Telegram WebApp is about to close
+tg.onEvent("viewportChanged", () => {
+  saveGameData()
+})
+
 // In production, you might want to disable console completely
 // This is just a simple deterrent
 console.log = () => {
@@ -531,6 +546,10 @@ setInterval(() => {
 // Initialize the game
 function initGame() {
   loadGameData()
+
+  // Save initial data
+  saveGameData()
+
   tg.ready()
 
   // Initial security check
