@@ -16,7 +16,7 @@ let clickTimestamps = []
 const MIN_CLICK_INTERVAL = 50 // Minimum time between clicks in ms
 let securityToken = generateSecurityToken()
 let lastSyncTimestamp = Date.now()
-const SYNC_INTERVAL = 3000 // Sync with server every 30 seconds
+const SYNC_INTERVAL = 30000 // Sync with server every 30 seconds
 let gameInitialized = false
 
 // DOM elements
