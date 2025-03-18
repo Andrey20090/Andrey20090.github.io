@@ -10,6 +10,57 @@ body {
   color: #ffffff;
   height: 100vh;
   overflow: hidden;
+  position: relative;
+  perspective: 1000px;
+}
+
+/* Enhanced animated background with multiple layers */
+body::before,
+body::after {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+body::before {
+  background: radial-gradient(circle at 20% 20%, rgba(0, 150, 255, 0.05) 0%, transparent 40%),
+    radial-gradient(circle at 80% 80%, rgba(0, 100, 255, 0.05) 0%, transparent 40%),
+    radial-gradient(circle at 50% 50%, rgba(0, 200, 255, 0.05) 0%, transparent 60%);
+  animation: backgroundPulse 10s ease-in-out infinite;
+  z-index: -2;
+}
+
+body::after {
+  background: linear-gradient(45deg, transparent 45%, rgba(0, 150, 255, 0.03) 50%, transparent 55%),
+    linear-gradient(-45deg, transparent 45%, rgba(0, 150, 255, 0.03) 50%, transparent 55%);
+  background-size: 200% 200%;
+  animation: gradientMove 15s linear infinite;
+  z-index: -1;
+}
+
+@keyframes backgroundPulse {
+  0%,
+  100% {
+    opacity: 0.5;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+}
+
+@keyframes gradientMove {
+  0% {
+    background-position: 0% 0%;
+  }
+  100% {
+    background-position: 200% 200%;
+  }
 }
 
 .container {
@@ -19,100 +70,195 @@ body {
   justify-content: center;
   height: 100%;
   padding: 20px;
+  position: relative;
 }
 
+/* Enhanced game container with 3D effects */
 .game-container {
   width: 100%;
   max-width: 500px;
   display: flex;
   flex-direction: column;
   gap: 20px;
-  background: rgba(0, 0, 0, 0.3);
+  background: rgba(0, 20, 40, 0.7);
   padding: 25px;
   border-radius: 20px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 40px rgba(0, 120, 255, 0.2), inset 0 0 20px rgba(0, 150, 255, 0.1);
   backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(0, 120, 255, 0.2);
+  animation: containerFloat 6s ease-in-out infinite;
+  transform-style: preserve-3d;
+  transition: transform 0.3s ease;
 }
 
+@keyframes containerFloat {
+  0%,
+  100% {
+    transform: translateY(0) rotateX(0deg);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 40px rgba(0, 120, 255, 0.2), inset 0 0 20px rgba(0, 150, 255, 0.1);
+  }
+  50% {
+    transform: translateY(-10px) rotateX(2deg);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6), 0 0 60px rgba(0, 150, 255, 0.3), inset 0 0 30px rgba(0, 150, 255, 0.2);
+  }
+}
+
+/* Enhanced score container with glass effect */
 .score-container {
   display: flex;
   justify-content: space-between;
   font-size: 18px;
   font-weight: bold;
   padding: 15px;
-  background: linear-gradient(90deg, #001428, #003366);
+  background: linear-gradient(135deg, rgba(0, 30, 60, 0.8), rgba(0, 50, 100, 0.4));
   border-radius: 12px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3), inset 0 0 20px rgba(0, 150, 255, 0.1);
   border: 1px solid rgba(0, 120, 255, 0.3);
+  position: relative;
+  overflow: hidden;
+  backdrop-filter: blur(5px);
+  transform-style: preserve-3d;
+  transition: transform 0.3s ease;
 }
 
+.score-container:hover {
+  transform: translateZ(10px);
+}
+
+.score-container::before {
+  content: "";
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(0, 150, 255, 0.1) 0%, transparent 70%);
+  animation: rotateLightOverlay 10s linear infinite;
+}
+
+.score-container::after {
+  content: "";
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(to right, transparent 0%, rgba(0, 150, 255, 0.2) 50%, transparent 100%);
+  transform: rotate(30deg);
+  animation: shineEffect 4s infinite;
+}
+
+@keyframes rotateLightOverlay {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* Enhanced score and currency indicators */
 .score,
 .currency {
   display: flex;
   align-items: center;
   gap: 8px;
+  position: relative;
+  z-index: 1;
+  text-shadow: 0 0 10px rgba(0, 150, 255, 0.5);
 }
 
-.score::before {
-  content: "";
-  display: inline-block;
-  width: 12px;
-  height: 12px;
-  background: #00a8ff;
-  border-radius: 50%;
-  box-shadow: 0 0 10px #00a8ff;
-}
-
+.score::before,
 .currency::before {
   content: "";
   display: inline-block;
   width: 12px;
   height: 12px;
-  background: #00e676;
   border-radius: 50%;
-  box-shadow: 0 0 10px #00e676;
+  animation: glowingDot 2s infinite;
 }
 
-/* Energy container styles */
+.score::before {
+  background: #00a8ff;
+  box-shadow: 0 0 10px #00a8ff, 0 0 20px #00a8ff, 0 0 30px #00a8ff;
+}
+
+.currency::before {
+  background: #00e676;
+  box-shadow: 0 0 10px #00e676, 0 0 20px #00e676, 0 0 30px #00e676;
+}
+
+@keyframes glowingDot {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.3);
+    opacity: 0.7;
+  }
+}
+
+/* Enhanced energy container */
 .energy-container {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  transform-style: preserve-3d;
+  transition: transform 0.3s ease;
+}
+
+.energy-container:hover {
+  transform: translateZ(5px);
 }
 
 .energy-label {
   display: flex;
   justify-content: space-between;
   font-size: 16px;
-  color: rgba(255, 255, 255, 0.8);
+  color: rgba(255, 255, 255, 0.9);
+  text-shadow: 0 0 10px rgba(0, 150, 255, 0.5);
 }
 
 .energy-time {
   font-size: 14px;
   color: #ff9800;
+  animation: energyPulse 2s infinite;
+}
+
+@keyframes energyPulse {
+  0%,
+  100% {
+    text-shadow: 0 0 10px rgba(255, 152, 0, 0.5);
+  }
+  50% {
+    text-shadow: 0 0 20px rgba(255, 152, 0, 0.8);
+  }
 }
 
 .energy-bar-container {
   width: 100%;
   height: 20px;
-  background: linear-gradient(90deg, #180c00, #281400);
+  background: linear-gradient(90deg, rgba(24, 12, 0, 0.8), rgba(40, 20, 0, 0.8));
   border-radius: 10px;
   overflow: hidden;
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.5);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.5), 0 0 10px rgba(255, 152, 0, 0.2);
   border: 1px solid rgba(255, 120, 0, 0.2);
+  position: relative;
 }
 
 .energy-bar {
   height: 100%;
   width: 100%;
   background: linear-gradient(90deg, #ff6d00, #ff9800);
-  box-shadow: 0 0 10px rgba(255, 150, 0, 0.7);
+  box-shadow: 0 0 10px rgba(255, 150, 0, 0.7), inset 0 0 15px rgba(255, 255, 255, 0.3);
   transition: width 0.3s ease;
   position: relative;
   overflow: hidden;
 }
 
+.energy-bar::before,
 .energy-bar::after {
   content: "";
   position: absolute;
@@ -120,17 +266,39 @@ body {
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.2) 50%, transparent 100%);
-  animation: shimmer 1.5s infinite;
+}
+
+.energy-bar::before {
+  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.3) 50%, transparent 100%);
+  animation: energyShimmer 1.5s infinite;
   transform: skewX(-20deg);
 }
 
-.energy-text {
-  text-align: center;
-  font-size: 14px;
-  color: rgba(255, 255, 255, 0.7);
+.energy-bar::after {
+  background: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.3) 0%, transparent 50%);
+  animation: energyPulseEffect 2s infinite;
 }
 
+@keyframes energyShimmer {
+  0% {
+    transform: translateX(-100%) skewX(-20deg);
+  }
+  100% {
+    transform: translateX(200%) skewX(-20deg);
+  }
+}
+
+@keyframes energyPulseEffect {
+  0%,
+  100% {
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* Enhanced click area */
 .click-area {
   height: 250px;
   display: flex;
@@ -140,17 +308,11 @@ body {
   border-radius: 20px;
   cursor: pointer;
   user-select: none;
-  transition: transform 0.2s, box-shadow 0.2s;
-  box-shadow: 0 8px 0 rgba(0, 0, 0, 0.3), 0 0 20px rgba(0, 150, 255, 0.5);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 8px 0 rgba(0, 0, 0, 0.3), 0 0 20px rgba(0, 150, 255, 0.5), inset 0 0 30px rgba(0, 150, 255, 0.2);
   position: relative;
   overflow: hidden;
-}
-
-.click-area.disabled {
-  background: linear-gradient(145deg, #1a1a1a, #333333);
-  box-shadow: 0 8px 0 rgba(0, 0, 0, 0.3), 0 0 20px rgba(100, 100, 100, 0.5);
-  cursor: not-allowed;
-  opacity: 0.7;
+  transform-style: preserve-3d;
 }
 
 .click-area::before {
@@ -160,9 +322,48 @@ body {
   left: -50%;
   width: 200%;
   height: 200%;
-  background: radial-gradient(circle, rgba(0, 150, 255, 0.1) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(0, 150, 255, 0.3) 0%, transparent 70%);
   opacity: 0;
   transition: opacity 0.5s;
+  transform: rotate(0deg);
+  animation: rotateGlow 10s linear infinite;
+}
+
+.click-area::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, transparent 0%, rgba(0, 150, 255, 0.1) 50%, transparent 100%),
+    radial-gradient(circle at 50% 50%, rgba(0, 150, 255, 0.1) 0%, transparent 60%);
+  opacity: 0.5;
+  animation: pulseGlow 4s ease-in-out infinite;
+}
+
+@keyframes rotateGlow {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes pulseGlow {
+  0%,
+  100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+.click-area:hover {
+  transform: translateZ(20px);
+  box-shadow: 0 12px 0 rgba(0, 0, 0, 0.3), 0 0 30px rgba(0, 150, 255, 0.7), inset 0 0 40px rgba(0, 150, 255, 0.3);
 }
 
 .click-area:hover::before {
@@ -170,50 +371,83 @@ body {
 }
 
 .click-area:active:not(.disabled) {
-  transform: translateY(4px);
-  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.3), 0 0 10px rgba(0, 150, 255, 0.5);
+  transform: translateY(8px) translateZ(10px);
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.3), 0 0 20px rgba(0, 150, 255, 0.5), inset 0 0 20px rgba(0, 150, 255, 0.2);
+}
+
+.click-area.disabled {
+  background: linear-gradient(145deg, #1a1a1a, #333333);
+  box-shadow: 0 8px 0 rgba(0, 0, 0, 0.3), 0 0 20px rgba(100, 100, 100, 0.5);
+  cursor: not-allowed;
+  opacity: 0.7;
+  transform: none;
 }
 
 .click-button {
   font-size: 36px;
   font-weight: bold;
   color: #ffffff;
-  text-shadow: 0 0 10px rgba(0, 150, 255, 0.8);
+  text-shadow: 0 0 10px rgba(0, 150, 255, 0.8), 0 0 20px rgba(0, 150, 255, 0.4), 0 0 30px rgba(0, 150, 255, 0.2);
   letter-spacing: 2px;
+  position: relative;
+  z-index: 2;
+  animation: buttonGlow 2s ease-in-out infinite;
 }
 
+@keyframes buttonGlow {
+  0%,
+  100% {
+    text-shadow: 0 0 10px rgba(0, 150, 255, 0.8), 0 0 20px rgba(0, 150, 255, 0.4), 0 0 30px rgba(0, 150, 255, 0.2);
+    transform: scale(1);
+  }
+  50% {
+    text-shadow: 0 0 20px rgba(0, 180, 255, 1), 0 0 40px rgba(0, 180, 255, 0.6), 0 0 60px rgba(0, 180, 255, 0.3);
+    transform: scale(1.05);
+  }
+}
+
+/* Enhanced progress container */
 .progress-container {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  transform-style: preserve-3d;
+  transition: transform 0.3s ease;
+}
+
+.progress-container:hover {
+  transform: translateZ(5px);
 }
 
 .progress-label {
   font-size: 16px;
   margin-bottom: 5px;
-  color: rgba(255, 255, 255, 0.8);
+  color: rgba(255, 255, 255, 0.9);
+  text-shadow: 0 0 10px rgba(0, 150, 255, 0.5);
 }
 
 .progress-bar-container {
   width: 100%;
   height: 20px;
-  background: linear-gradient(90deg, #000c18, #001428);
+  background: linear-gradient(90deg, rgba(0, 12, 24, 0.8), rgba(0, 20, 40, 0.8));
   border-radius: 10px;
   overflow: hidden;
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.5);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.5), 0 0 10px rgba(0, 120, 255, 0.2);
   border: 1px solid rgba(0, 120, 255, 0.2);
+  position: relative;
 }
 
 .progress-bar {
   height: 100%;
   width: 0%;
   background: linear-gradient(90deg, #0066cc, #00a8ff);
-  box-shadow: 0 0 10px rgba(0, 150, 255, 0.7);
-  transition: width 0.3s ease;
+  box-shadow: 0 0 10px rgba(0, 150, 255, 0.7), inset 0 0 15px rgba(255, 255, 255, 0.3);
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   overflow: hidden;
 }
 
+.progress-bar::before,
 .progress-bar::after {
   content: "";
   position: absolute;
@@ -221,31 +455,20 @@ body {
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.2) 50%, transparent 100%);
-  animation: shimmer 1.5s infinite;
+}
+
+.progress-bar::before {
+  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.3) 50%, transparent 100%);
+  animation: progressShimmer 1.5s infinite;
   transform: skewX(-20deg);
 }
 
-.progress-text {
-  text-align: center;
-  font-size: 14px;
-  color: rgba(255, 255, 255, 0.7);
+.progress-bar::after {
+  background: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.3) 0%, transparent 50%);
+  animation: progressPulse 2s infinite;
 }
 
-/* Animation for click effect */
-@keyframes clickEffect {
-  0% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(0.95);
-  }
-  100% {
-    transform: scale(1);
-  }
-}
-
-@keyframes shimmer {
+@keyframes progressShimmer {
   0% {
     transform: translateX(-100%) skewX(-20deg);
   }
@@ -254,21 +477,40 @@ body {
   }
 }
 
-.click-effect {
-  animation: clickEffect 0.2s;
+@keyframes progressPulse {
+  0%,
+  100% {
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
 }
 
-/* Ripple effect for click area */
+.progress-text {
+  text-align: center;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.8);
+  text-shadow: 0 0 5px rgba(0, 150, 255, 0.5);
+}
+
+/* Enhanced ripple effect */
 .ripple {
   position: absolute;
   border-radius: 50%;
-  background: rgba(0, 150, 255, 0.4);
+  background: radial-gradient(
+    circle,
+    rgba(0, 180, 255, 0.8) 0%,
+    rgba(0, 150, 255, 0.5) 30%,
+    rgba(0, 120, 255, 0.3) 60%,
+    transparent 100%
+  );
   transform: scale(0);
-  animation: ripple 0.8s linear;
+  animation: rippleEffect 0.8s cubic-bezier(0.4, 0, 0.2, 1);
   pointer-events: none;
 }
 
-@keyframes ripple {
+@keyframes rippleEffect {
   to {
     transform: scale(4);
     opacity: 0;
